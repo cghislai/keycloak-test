@@ -1,0 +1,49 @@
+thorntail:
+
+  logging:
+    pattern-formatters:
+      LOG_FORMATTER:
+        pattern: "%p [%c] %s%e%n"
+    root-logger:
+      handlers:
+        - CONSOLE
+      level: DEBUG
+    loggers:
+      com.charlyghislain:
+        level: DEBUG
+
+  https:
+    port: 8443
+    keystore:
+      path: "${env.KEYSTORE_PATH}"
+      password: "${env.KEYSTORE_PASSWORD}"
+    key:
+      alias: "${env.KEY_ALIAS}"
+
+  microprofile:
+    config:
+      config-sources:
+        file-props:
+          dir: /configs
+    jwt:
+      token:
+#        issued-by: https://my.auth.server/
+#        signer-pub-key: classpath:public-key.pem
+        exp-grace-period: 120
+
+  security:
+    security-domains:
+      test-realm:
+        jaspi-authentication:
+          login-module-stacks:
+            test-login-module-stack:
+              login-modules:
+                - login-module: jwt-login-module
+                  code: org.wildfly.swarm.microprofile.jwtauth.deployment.auth.jaas.JWTLoginModule
+                  flag: required
+          auth-modules:
+            http:
+              code: org.wildfly.extension.undertow.security.jaspi.modules.HTTPSchemeServerAuthModule
+              module: org.wildfly.extension.undertow
+              flag: required
+              login-module-stack-ref: test-login-module-stack

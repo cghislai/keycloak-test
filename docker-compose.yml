@@ -1,0 +1,101 @@
+version: "3.6"
+
+services:
+
+  keycloak:
+    image: jboss/keycloak:8.0.2
+    env_file:
+      - ./docker/keycloak.env
+    networks:
+      auth:
+        aliases:
+          - auth.local
+      default:
+    volumes:
+      - valuya-dev_certs:/certs
+      - ./docker/cli/base-config.cli:/opt/jboss/startup-scripts/base-config.cli
+      - ./docker/cli/ssl-auth-config.cli:/opt/jboss/startup-scripts/ssl-auth-config.cli
+      - ./docker/keycloak-db-password:/var/run/secrets/db-password
+      - ./docker/keycloak-admin-password:/var/run/secrets/keycloak-admin-password
+      - ./docker/keycloak-auth-truststore.p12:/opt/jboss/keycloak/auth-truststore.p12
+    ports:
+      - 8443:8443
+
+  keycloak-db:
+    image: mariadb:10
+    env_file:
+      - ./docker/keycloak-db.env
+    networks:
+      - default
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./docker/keycloak-db-password:/var/run/secrets/db-password
+      - ./docker/keycloak-db-root-password:/var/run/secrets/db-root-password
+
+  backend:
+    image: keycloaktest-backend
+    environment:
+      - THORNTAIL_HTTPS_ONLY=true
+      - KEYSTORE_PATH=/certs/authbackend.local.p12
+      - KEYSTORE_PASSWORD=password
+      - KEY_ALIAS=authbackend.local
+    ports:
+      - 8444:8443
+      - 8787:8787
+    volumes:
+      - valuya-dev_certs:/certs
+    networks:
+      auth:
+
+
+  # Frontend: ng serve from src dir for now
+
+
+  make_auth_cert:
+    image: docker.valuya.be/openssl:3
+    environment:
+      - KEYSTORE_PASSWORD=password
+      - CERT_CN=auth.local
+    command: '/create-certificate.sh'
+    volumes:
+      - valuya-dev_certs:/etc/ssl/selfsigned
+
+  make_backend_cert:
+    image: docker.valuya.be/openssl:3
+    environment:
+      - KEYSTORE_PASSWORD=password
+      - CERT_CN=authbackend.local
+    command: '/create-certificate.sh'
+    volumes:
+      - valuya-dev_certs:/etc/ssl/selfsigned
+
+  make_frontend_cert:
+    image: docker.valuya.be/openssl:3
+    environment:
+      - KEYSTORE_PASSWORD=password
+      - CERT_CN=authfrontend.local
+    command: '/create-certificate.sh'
+    volumes:
+      - valuya-dev_certs:/etc/ssl/selfsigned
+
+
+  make_truststore:
+    image: docker.valuya.be/openssl:3
+    environment:
+      - TRUSTSTORE_NAME=keycloak-auth-truststore.p12
+      - TRUSTSTORE_ADD_BELGIAN_ROOTS=true
+      - TRUSTSTORE_CERT_FILES=/etc/ssl/selfsigned/ca/root-ca.pem
+      - TRUSTSTORE_PASSWORD=password
+    command: '/create-truststore.sh'
+    volumes:
+      - valuya-dev_certs:/etc/ssl/selfsigned
+      - ./docker:/etc/ssl/truststores
+
+networks:
+  auth:
+  default:
+
+volumes:
+  db-data:
+  valuya-dev_certs:
+    external: true

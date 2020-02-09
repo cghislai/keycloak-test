@@ -1,0 +1,4 @@
+GET {{ws-uri}}/hello
+Authorization: Bearer {{auth-token}}
+
+###

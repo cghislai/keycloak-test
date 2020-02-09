@@ -1,0 +1,12 @@
+
+embed-server --std-out=echo --server-config=standalone-ha.xml
+
+/core-service=management/security-realm=ApplicationRealm/server-identity=ssl:write-attribute(name=keystore-path, value=${env.KEYSTORE_PATH})
+/core-service=management/security-realm=ApplicationRealm/server-identity=ssl:write-attribute(name=keystore-password, value=${env.KEYSTORE_PASSWORD})
+/core-service=management/security-realm=ApplicationRealm/server-identity=ssl:undefine-attribute(name=keystore-relative-to)
+/core-service=management/security-realm=ApplicationRealm/server-identity=ssl:write-attribute(name=alias, value=${env.KEY_ALIAS})
+/core-service=management/security-realm=ApplicationRealm/server-identity=ssl:undefine-attribute(name=generate-self-signed-certificate-host)
+/core-service=management/security-realm=ApplicationRealm/server-identity=ssl:undefine-attribute(name=key-password)
+
+stop-embedded-server
+

@@ -1,0 +1,9 @@
+embed-server --std-out=echo --server-config=standalone-ha.xml
+
+# Context path
+/subsystem=keycloak-server/:write-attribute(name=web-context,value=/)
+
+# https://www.keycloak.org/docs/latest/server_installation/index.html#_cli_recipes
+
+stop-embedded-server
+

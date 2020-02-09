@@ -1,0 +1,14 @@
+
+embed-server --std-out=echo --server-config=standalone-ha.xml
+
+/core-service=management/security-realm=SSLAuthRealm:add()
+
+/core-service=management/security-realm=SSLAuthRealm/server-identity=ssl:add(keystore-path=${env.SSL_AUTH_KEYSTORE_PATH}, keystore-password=${env.SSL_AUTH_KEYSTORE_PASSWORD}, alias=${env.SSL_AUTH_KEY_ALIAS})
+
+/core-service=management/security-realm=SSLAuthRealm/authentication=truststore:add(keystore-path=${env.SSL_AUTH_TRUSTSTORE_PATH}, keystore-password=${env.SSL_AUTH_TRUSTSTORE_PASSWORD})
+
+/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=security-realm,value=SSLAuthRealm)
+/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=verify-client,value=REQUESTED)
+
+stop-embedded-server
+
