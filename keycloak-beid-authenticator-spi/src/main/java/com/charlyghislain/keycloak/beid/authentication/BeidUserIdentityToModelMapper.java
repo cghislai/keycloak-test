@@ -1,5 +1,6 @@
-package com.charlyghislain.keycloak.authentication.beid;
+package com.charlyghislain.keycloak.beid.authentication;
 
+import com.charlyghislain.keycloak.beid.credential.BeidCertificateSecret;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.x509.UserIdentityToModelMapper;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
@@ -23,20 +24,20 @@ public class BeidUserIdentityToModelMapper extends UserIdentityToModelMapper {
     @Override
     public UserModel find(AuthenticationFlowContext context, Object userIdentity) throws Exception {
         KeycloakSession session = context.getSession();
-        if (userIdentity == null || !BeidUserIdentity.class.isAssignableFrom(userIdentity.getClass())) {
+        if (userIdentity == null || !BeidCertificateSecret.class.isAssignableFrom(userIdentity.getClass())) {
             return null;
         }
-        BeidUserIdentity beidUserIdentity = (BeidUserIdentity) userIdentity;
+        BeidCertificateSecret beidCertificateSecret = (BeidCertificateSecret) userIdentity;
 
         List<UserModel> users;
         if (ssinAttributeName != null && !ssinAttributeName.isBlank()) {
             // Match by ssin
-            String ssin = beidUserIdentity.getSsin();
+            String ssin = beidCertificateSecret.getSsin();
             users = session.users().searchForUserByUserAttribute(ssinAttributeName, ssin, context.getRealm());
         } else {
             // Match by names
-            String surname = beidUserIdentity.getSurname();
-            String givenNames = beidUserIdentity.getGivenNames();
+            String surname = beidCertificateSecret.getSurname();
+            String givenNames = beidCertificateSecret.getGivenNames();
             String givenName = Arrays.stream(givenNames.split(" "))
                     .findFirst()
                     .orElse("");

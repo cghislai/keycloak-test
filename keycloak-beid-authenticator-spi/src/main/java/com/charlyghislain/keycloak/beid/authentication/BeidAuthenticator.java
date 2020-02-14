@@ -1,12 +1,18 @@
-package com.charlyghislain.keycloak.authentication.beid;
+package com.charlyghislain.keycloak.beid.authentication;
 
+import com.charlyghislain.keycloak.beid.credential.BeidCertificateSecret;
+import com.charlyghislain.keycloak.beid.credential.BeidCredentialProvider;
+import com.charlyghislain.keycloak.beid.credential.BeidCredentialProviderFactory;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator;
 import org.keycloak.authentication.authenticators.x509.CertificateValidator;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
+import org.keycloak.credential.CredentialProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -19,7 +25,23 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 
-public class BeidAuthenticator extends AbstractX509ClientCertificateAuthenticator {
+public class BeidAuthenticator extends AbstractX509ClientCertificateAuthenticator implements CredentialValidator<BeidCredentialProvider> {
+
+    @Override
+    public void action(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        if (formData.containsKey("cancel")) {
+            context.clearUser();
+            context.attempted();
+            return;
+        }
+        if (context.getUser() != null) {
+            recordX509CertificateAuditDataViaContextEvent(context);
+            context.success();
+            return;
+        }
+        context.attempted();
+    }
 
 
     public void authenticate(AuthenticationFlowContext context) {
@@ -70,7 +92,7 @@ public class BeidAuthenticator extends AbstractX509ClientCertificateAuthenticato
 
             BeidUserIdentityExtractor beidUserIdentityExtractor = new BeidUserIdentityExtractor();
             Object userIdentity = beidUserIdentityExtractor.extractUserIdentity(certs);
-            if (userIdentity == null || !BeidUserIdentity.class.isAssignableFrom(userIdentity.getClass())) {
+            if (userIdentity == null || !BeidCertificateSecret.class.isAssignableFrom(userIdentity.getClass())) {
                 context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
                 logger.warnf("[X509ClientCertificateAuthenticator:authenticate] Unable to extract user identity from certificate.");
                 // TODO use specific locale to load error messages
@@ -81,10 +103,10 @@ public class BeidAuthenticator extends AbstractX509ClientCertificateAuthenticato
                 return;
             }
 
-            BeidUserIdentity beidUserIdentity = (BeidUserIdentity) userIdentity;
+            BeidCertificateSecret beidCertificateSecret = (BeidCertificateSecret) userIdentity;
             UserModel user;
             try {
-                context.getEvent().detail(Details.USERNAME, beidUserIdentity.getCertName());
+                context.getEvent().detail(Details.USERNAME, beidCertificateSecret.getCertName());
 //                context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, userIdentity.toString());
                 BeidUserIdentityToModelMapper identityToModelMapper = new BeidUserIdentityToModelMapper(config);
                 user = identityToModelMapper.find(context, userIdentity);
@@ -152,10 +174,6 @@ public class BeidAuthenticator extends AbstractX509ClientCertificateAuthenticato
             logger.errorf("[X509ClientCertificateAuthenticator:authenticate] Exception: %s", e.getMessage());
             context.attempted();
         }
-    }
-
-    public void action(AuthenticationFlowContext authenticationFlowContext) {
-
     }
 
     private void dumpContainerAttributes(AuthenticationFlowContext context) {
@@ -230,6 +248,11 @@ public class BeidAuthenticator extends AbstractX509ClientCertificateAuthenticato
             return true;
         }
         return false;
+    }
+
+    @Override
+    public BeidCredentialProvider getCredentialProvider(KeycloakSession session) {
+        return (BeidCredentialProvider) session.getProvider(CredentialProvider.class, BeidCredentialProviderFactory.PROVIDER_ID);
     }
 
 }

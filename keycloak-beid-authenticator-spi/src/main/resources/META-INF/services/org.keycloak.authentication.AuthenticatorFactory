@@ -1,1 +1,1 @@
-com.charlyghislain.keycloak.authentication.beid.BeidAuthenticatorFactory
+com.charlyghislain.keycloak.beid.authentication.BeidAuthenticatorFactory

@@ -1,4 +1,4 @@
-package com.charlyghislain.keycloak.authentication.beid;
+package com.charlyghislain.keycloak.beid.authentication;
 
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticatorFactory;
@@ -9,7 +9,6 @@ public class BeidAuthenticatorFactory extends AbstractX509ClientCertificateAuthe
 
     public static final String PROVIDER_ID = "auth-beid-ssin-names-form";
     public static final BeidAuthenticator SINGLETON = new BeidAuthenticator();
-
 
     @Override
     public String getDisplayType() {
@@ -34,5 +33,10 @@ public class BeidAuthenticatorFactory extends AbstractX509ClientCertificateAuthe
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public boolean isUserSetupAllowed() {
+        return true;
     }
 }
