@@ -1,0 +1,9 @@
+embed-server --std-out=echo --server-config=standalone-ha.xml
+
+# Disable cache for theme editing
+/subsystem=keycloak-server/theme=defaults/:write-attribute(name=staticMaxAge, value=-1)
+/subsystem=keycloak-server/theme=defaults/:write-attribute(name=cacheThemes, value=false)
+/subsystem=keycloak-server/theme=defaults/:write-attribute(name=cacheTemplates, value=false)
+
+stop-embedded-server
+

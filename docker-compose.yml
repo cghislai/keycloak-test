@@ -15,11 +15,15 @@ services:
       - valuya-dev_certs:/certs
       - ./docker/cli/base-config.cli:/opt/jboss/startup-scripts/base-config.cli
       - ./docker/cli/ssl-auth-config.cli:/opt/jboss/startup-scripts/ssl-auth-config.cli
+      - ./docker/cli/theme-config.cli:/opt/jboss/startup-scripts/theme-config.cli
       - ./docker/keycloak-db-password:/var/run/secrets/db-password
       - ./docker/keycloak-admin-password:/var/run/secrets/keycloak-admin-password
       - ./docker/keycloak-auth-truststore.p12:/opt/jboss/keycloak/auth-truststore.p12
+      - ./keycloak-beid-authenticator-spi/target/keycloak-beid-authenticator-spi.jar:/opt/jboss/keycloak/providers/beid-authenticator-spi.jar
+      - ./keycloak-testtheme/target/testtheme.jar:/opt/jboss/keycloak/standalone/deployments/testtheme.jar
     ports:
       - 8443:8443
+      - 8787:8787
 
   keycloak-db:
     image: mariadb:10
